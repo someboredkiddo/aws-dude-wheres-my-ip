@@ -30,7 +30,7 @@ def find_ip_in_cluster(ip):
     return None
 
 
-def find_ip_in_ec2(ip):
+def find_ip_in_ec2(ips):
     client = boto3.client('ec2', region_name='us-east-1')
     response = client.describe_instances(
             Filters=[
@@ -59,20 +59,36 @@ def find_ip_in_ec2(ip):
     return (instance_id, instance_name)
 
 
+def search_by_ip(ip):
+    print('Looking for Cluster with IP {}'.format(ip))
+    cluster = find_ip_in_cluster(ips)
+    if cluster:
+        print('Found IP in task on cluster: {}'.format(cluster))
+        return
+    # print('IP not found in any ECS cluster\n')
+
+    print('Looking for ec2 instance with IP {}'.format(ip))
+    ec2_instance = find_ip_in_ec2(ips)
+    if ec2_instance:
+        print('Found IP on ec2 instance: {} {}'.format(ec2_instance[0], ec2_instance[1]))
+        exit(0)
+    print('IP not found in any ec2 instance')    
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('ip')
     args = parser.parse_args()
-    print('Looking for Cluster with IP {}'.format(args.ip))
-    cluster = find_ip_in_cluster(args.ip)
+    
+    ips = [args.ip]
+    cluster = find_ip_in_cluster(ips)
     if cluster:
         print('Found IP in task on cluster: {}'.format(cluster))
         exit(0)
     print('IP not found in any ECS cluster\n')
 
     print('Looking for ec2 instance with IP {}'.format(args.ip))
-    ec2_instance = find_ip_in_ec2(args.ip)
+    ec2_instance = find_ip_in_ec2(ips)
     if ec2_instance:
         print('Found IP on ec2 instance: {} {}'.format(ec2_instance[0], ec2_instance[1]))
         exit(0)
